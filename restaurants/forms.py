@@ -5,6 +5,7 @@ from django.forms import (CharField, DateField, DateInput,
      EmailField, Form, IntegerField, ModelChoiceField, ModelForm,
      PasswordInput, Textarea, TimeField, TimeInput, URLField)
 from restaurants.models import Category, Profile, Reservation, Restaurant
+import ipdb
 
 class ReservationForm(ModelForm):
     party_size = IntegerField()
@@ -21,6 +22,23 @@ class ReservationForm(ModelForm):
         restaurant = self.instance.restaurant
         closing = restaurant.closing_time
         opening = restaurant.opening_time
+        x = closing.hour - 1
+        y = cleaned_time.hour
+
+        # ipdb.set_trace()
+
+        if abs(x) != x:
+        #scenario where restaurant closes at midnight
+            x = x + 24
+            if y > x:
+                self.add_error('time', 'Restaurant not taking reservations')
+        elif x == 0 and y == 0:
+        #scenario where restaurant closes at 1 am
+            self.add_error('time', 'Restaurant not taking reservations')
+        else:
+        #scenario where restaurant closes at any other time
+            if y >= x and x != 0:
+                self.add_error('time', 'Restaurant not taking reservations')
 
         if restaurant.open_past_midnight():
             if closing < cleaned_time and cleaned_time < opening:

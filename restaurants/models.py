@@ -72,4 +72,3 @@ class Reservation(models.Model):
         date = self.date.strftime("%Y-%m-%d")
         time = self.time.strftime("%H:%M")
         return "{} {}".format(date, time)
-

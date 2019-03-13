@@ -5,6 +5,9 @@ from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from restaurants.forms import LoginForm, ProfileForm, ReservationForm, RestaurantForm
 from restaurants.models import Category, Profile, Restaurant
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
 
 def restaurants_list(request):
     restaurants = Restaurant.objects.all()
@@ -22,16 +25,19 @@ def restaurant_show(request, id):
 @login_required
 def restaurant_edit(request, id):
     restaurant = Restaurant.objects.get(pk=id)
-    if request.method == 'POST':
-        form = RestaurantForm(request.POST, instance=restaurant)
-        if form.is_valid():
-            resto = form.save()
-            return redirect(reverse('restaurant_show', args=[restaurant.pk]))
+    if restaurant.owner == request.user:
+        if request.method == 'POST':
+            form = RestaurantForm(request.POST, instance=restaurant)
+            if form.is_valid():
+                resto = form.save()
+                return redirect(reverse('restaurant_show', args=[restaurant.pk]))
+        else:
+            form = RestaurantForm(instance=restaurant)
+            title = "Edit {}".format(restaurant.name)
+            context = {'restaurant': restaurant, 'form': form, 'title': title}
+            return render(request, 'restaurant_edit.html', context)
     else:
-        form = RestaurantForm(instance=restaurant)
-        title = "Edit {}".format(restaurant.name)
-        context = {'restaurant': restaurant, 'form': form, 'title': title}
-        return render(request, 'restaurant_edit.html', context)
+        return HttpResponseRedirect('/restaurants/')
 
 def categories_list(request):
     categories = Category.objects.all()
@@ -52,6 +58,7 @@ def reservation_create(request, restaurant_id):
     reservation.restaurant = restaurant
     reservation.user = request.user
     if form.is_valid():
+
         form.save()
         return redirect(reverse('restaurant_show', args=[restaurant.pk]))
     else:
